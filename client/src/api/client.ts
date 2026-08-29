@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Determina dinamicamente a URL base da API a partir do host do navegador ou configuração mobile
 export function getBackendBaseUrl(): string {
-  if (typeof window === 'undefined') return 'http://localhost:5000';
+  if (typeof window === 'undefined') return 'https://nexus-social-t5ec.onrender.com';
   
   // Se houver uma URL customizada configurada pelo usuário (ex: no app mobile)
   const customUrl = localStorage.getItem('localsocial_server_url');
@@ -19,15 +19,21 @@ export function getBackendBaseUrl(): string {
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
 
-  // Se estiver rodando dentro do Capacitor (Android/iOS)
-  if (protocol === 'capacitor:' || protocol === 'ionic:') {
-    return customUrl || 'http://192.168.0.65:5000';
-  }
-
-  // Se estiver usando proxy Vite na porta 3000 em dev ou produção com mesmo host
-  if (window.location.port === '3000') {
+  // Se estiver rodando localmente (localhost ou IP local)
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || window.location.port === '3000') {
     return `${protocol}//${hostname}:5000`;
   }
+
+  // Se estiver rodando dentro do Capacitor (Android/iOS)
+  if (protocol === 'capacitor:' || protocol === 'ionic:') {
+    return customUrl || 'https://nexus-social-t5ec.onrender.com';
+  }
+
+  // Se estiver na Vercel ou produção na nuvem, usa o servidor oficial do Render
+  if (hostname.includes('vercel.app') || !window.location.port) {
+    return 'https://nexus-social-t5ec.onrender.com';
+  }
+
   return `${protocol}//${window.location.host}`;
 }
 
