@@ -66,28 +66,90 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
   const currentMedia = mediaList[currentMediaIndex];
   const isCurrentVideo = currentMedia?.mediaType === 'VIDEO';
 
-  // Auto-play when visible in viewport
+  // Auto-play de Vídeo e Trilha Sonora Musical quando o post está visível na tela
   useEffect(() => {
-    if (!isCurrentVideo) return;
+    const card = cardRef.current;
+    if (!card) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && videoRef.current) {
-          videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-        } else if (videoRef.current) {
-          videoRef.current.pause();
-          setIsPlaying(false);
+        if (entry.isIntersecting) {
+          // 1. Se o post tiver música/trilha sonora cadastrada, inicia o som automaticamente
+          if (post.musicAudioUrl) {
+            if (!musicAudioRef.current) {
+              const audio = new Audio(post.musicAudioUrl);
+              audio.loop = true;
+              audio.volume = 0.85;
+              audio.onended = () => setIsPlayingMusic(false);
+              musicAudioRef.current = audio;
+            }
+            musicAudioRef.current
+              .play()
+              .then(() => setIsPlayingMusic(true))
+              .catch(() => {
+                // Caso o navegador bloqueie até a primeira interação de toque/clique
+              });
+          }
+
+          // 2. Se a mídia atual for vídeo, dá play
+          if (isCurrentVideo && videoRef.current) {
+            videoRef.current
+              .play()
+              .then(() => setIsPlaying(true))
+              .catch(() => {});
+          }
+        } else {
+          // Quando o usuário rola a tela e o post sai do campo de visão, pausa automaticamente
+          if (musicAudioRef.current) {
+            musicAudioRef.current.pause();
+            setIsPlayingMusic(false);
+          }
+          if (videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+          }
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.45 }
     );
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
+    observer.observe(card);
 
-    return () => observer.disconnect();
-  }, [isCurrentVideo, currentMediaIndex]);
+    return () => {
+      observer.disconnect();
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+      }
+    };
+  }, [post.musicAudioUrl, isCurrentVideo, currentMediaIndex]);
+
+  // Desbloqueador de áudio no primeiro toque/clique do usuário
+  useEffect(() => {
+    if (!post.musicAudioUrl) return;
+
+    const handleFirstGesture = () => {
+      if (musicAudioRef.current && cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        const isInView = rect.top < window.innerHeight * 0.75 && rect.bottom > window.innerHeight * 0.25;
+        if (isInView && musicAudioRef.current.paused) {
+          musicAudioRef.current
+            .play()
+            .then(() => setIsPlayingMusic(true))
+            .catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('click', handleFirstGesture, { once: true });
+    window.addEventListener('touchstart', handleFirstGesture, { once: true });
+    window.addEventListener('scroll', handleFirstGesture, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+      window.removeEventListener('scroll', handleFirstGesture);
+    };
+  }, [post.musicAudioUrl]);
 
   const togglePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
