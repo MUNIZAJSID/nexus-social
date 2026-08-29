@@ -43,6 +43,7 @@ export const HighlightViewerModal: React.FC<HighlightViewerModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      window.dispatchEvent(new CustomEvent('nexus:pause_all_media'));
       setCurrentItemIdx(0);
       setProgress(0);
       setIsPaused(false);

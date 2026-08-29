@@ -53,6 +53,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
   // Story Reply State
   const [replyText, setReplyText] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [replyFeedback, setReplyFeedback] = useState<string | null>(null);
   const [showQuickReactions, setShowQuickReactions] = useState(false);
@@ -72,12 +73,23 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
   const isOwner = user && currentGroup && (currentGroup.user.id === user.id || currentStory?.isOwner);
 
+  // Pausar imediatamente qualquer som/vídeo do feed ao abrir os Stories
   useEffect(() => {
-    setCurrentGroupIdx(initialGroupIndex);
-    setCurrentStoryIdx(0);
-    setProgress(0);
-    setShowViewersSheet(false);
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent('nexus:pause_all_media'));
+      setCurrentGroupIdx(initialGroupIndex);
+      setCurrentStoryIdx(0);
+      setProgress(0);
+      setShowViewersSheet(false);
+      setReplyText('');
+      setIsInputFocused(false);
+      setShowQuickReactions(false);
+    }
   }, [initialGroupIndex, isOpen]);
+
+  // Se o usuário estiver digitando resposta ou interagindo, o story pausa completamente (foto, vídeo e timer)
+  const isReplying = Boolean(replyText.trim().length > 0 || isInputFocused || showQuickReactions);
+  const isMediaPaused = Boolean(isPaused || isReplying || showViewersSheet || !isOpen);
 
   // Gerenciamento de Trilha Sonora / Música do Story
   useEffect(() => {
@@ -107,7 +119,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
     musicAudioRef.current = audio;
 
-    if (!isPaused && !showViewersSheet) {
+    if (!isMediaPaused) {
       audio.play().then(applyStartTime).catch(() => {});
     }
 
@@ -118,17 +130,28 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     };
   }, [currentStory?.id, isOpen]);
 
-  // Sync mute e pause de música
+  // Sincroniza Play / Pause e Mute da Música do Story
   useEffect(() => {
     if (musicAudioRef.current) {
       musicAudioRef.current.muted = isMuted;
-      if (isPaused || showViewersSheet || !isOpen) {
+      if (isMediaPaused) {
         musicAudioRef.current.pause();
       } else {
         musicAudioRef.current.play().catch(() => {});
       }
     }
-  }, [isMuted, isPaused, showViewersSheet, isOpen]);
+  }, [isMuted, isMediaPaused]);
+
+  // Sincroniza Play / Pause do Vídeo do Story (pausa ao responder)
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isMediaPaused) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isMediaPaused, currentStory?.id]);
 
   // Sync like/views state when story changes & record view
   useEffect(() => {
@@ -150,9 +173,9 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     }
   }, [currentStory?.id, user?.id]);
 
-  // Story Progress Timer (baseado no tempo definido pelo autor: 5s, 10s, 15s, 30s, 40s)
+  // Story Progress Timer (pausado automaticamente durante digitação de resposta)
   useEffect(() => {
-    if (!isOpen || !currentStory || isPaused || showViewersSheet) return;
+    if (!isOpen || !currentStory || isMediaPaused) return;
 
     const interval = 50; // ms
     const duration = (currentStory.duration || (currentStory.mediaType === 'VIDEO' ? 15 : 10)) * 1000;
@@ -169,7 +192,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     }, interval);
 
     return () => clearInterval(timerRef.current);
-  }, [isOpen, currentStory, currentGroupIdx, currentStoryIdx, isPaused, showViewersSheet]);
+  }, [isOpen, currentStory, currentGroupIdx, currentStoryIdx, isMediaPaused]);
 
   const handleNextStory = () => {
     setProgress(0);
@@ -273,6 +296,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
       });
       if (res.data.success) {
         setReplyText('');
+        setIsInputFocused(false);
         setShowQuickReactions(false);
         setReplyFeedback('Mensagem enviada no direct!');
         setTimeout(() => setReplyFeedback(null), 2500);
@@ -552,11 +576,9 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
                   type="text"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  onFocus={() => setIsPaused(true)}
+                  onFocus={() => setIsInputFocused(true)}
                   onBlur={() => {
-                    if (!replyText.trim() && !showQuickReactions) {
-                      setIsPaused(false);
-                    }
+                    setIsInputFocused(false);
                   }}
                   placeholder={`Enviar mensagem para @${currentGroup.user.username}...`}
                   className="flex-1 bg-transparent text-xs text-white placeholder-white/50 focus:outline-none font-medium"

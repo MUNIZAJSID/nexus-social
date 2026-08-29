@@ -123,6 +123,25 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
     };
   }, [post.musicAudioUrl, isCurrentVideo, currentMediaIndex]);
 
+  // Pausa todas as mídias deste post quando receber o evento global (ex: abrir Stories ou Highlights)
+  useEffect(() => {
+    const handlePauseAll = () => {
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+        setIsPlayingMusic(false);
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+
+    window.addEventListener('nexus:pause_all_media', handlePauseAll);
+    return () => {
+      window.removeEventListener('nexus:pause_all_media', handlePauseAll);
+    };
+  }, []);
+
   // Desbloqueador de áudio no primeiro toque/clique do usuário
   useEffect(() => {
     if (!post.musicAudioUrl) return;
