@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Textarea, Input } from '../ui/Input';
-import { ImagePlus, MapPin, X, Film, Music, Disc } from 'lucide-react';
+import { ImagePlus, MapPin, X, Film, Music, Disc, Camera } from 'lucide-react';
 import { MusicPickerModal } from '../music/MusicPickerModal';
+import { CameraCaptureModal } from '../camera/CameraCaptureModal';
 import { api } from '../../api/client';
 import { Post, MusicTrack } from '../../types';
 import { compressImage } from '../../utils/imageCompressor';
@@ -30,9 +31,26 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [mediaList, setMediaList] = useState<PreviewItem[]>([]);
   const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoCaptured = (file: File) => {
+    if (mediaList.length >= 10) {
+      setError('Você pode enviar no máximo 10 mídias por publicação.');
+      return;
+    }
+
+    const newPreview: PreviewItem = {
+      file,
+      previewUrl: URL.createObjectURL(file),
+      isVideo: false,
+    };
+
+    setMediaList((prev) => [...prev, newPreview]);
+    setError('');
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -119,20 +137,39 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Upload drop area */}
         {mediaList.length === 0 ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-3xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer bg-slate-50 dark:bg-slate-900/40 transition-colors group"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <ImagePlus className="w-8 h-8" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                Selecione ou arraste fotos e vídeos
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Suporta JPG, PNG, WEBP, MP4 até 50MB (máximo 10 arquivos)
-              </p>
+          <div className="flex flex-col gap-3">
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-slate-900/40">
+              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+                <ImagePlus className="w-7 h-7" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  Adicione fotos ou vídeos à publicação
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Suporta JPG, PNG, WEBP, MP4 até 100MB (máx. 10 arquivos)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 mt-2 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-bold shadow-md shadow-pink-500/20 transition-transform active:scale-95 cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Tirar Foto</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  <span>Galeria</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -177,12 +214,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               ))}
 
               {mediaList.length < 10 && (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-brand-500 transition-colors"
-                >
-                  <ImagePlus className="w-6 h-6 text-slate-400" />
-                  <span className="text-xs font-semibold text-slate-500">Adicionar</span>
+                <div className="flex flex-col gap-2">
+                  <div
+                    onClick={() => setShowCamera(true)}
+                    className="aspect-square rounded-2xl border-2 border-dashed border-pink-400/50 hover:border-pink-500 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-pink-500/5 hover:bg-pink-500/10 transition-colors"
+                  >
+                    <Camera className="w-5 h-5 text-pink-500" />
+                    <span className="text-[11px] font-bold text-pink-600 dark:text-pink-400">Tirar Foto</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -304,6 +343,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         onClose={() => setShowMusicPicker(false)}
         onSelect={(track) => setSelectedMusic(track)}
         selectedTrack={selectedMusic}
+      />
+
+      {/* Modal de Câmera do App */}
+      <CameraCaptureModal
+        isOpen={showCamera}
+        onClose={() => setShowCamera(false)}
+        onPhotoCaptured={handlePhotoCaptured}
       />
     </Modal>
   );

@@ -19,9 +19,10 @@ import { MusicPickerModal } from '../music/MusicPickerModal';
 import { MusicTrimmer } from '../music/MusicTrimmer';
 import { StickerPickerModal, DraftSticker } from '../story/StickerPickerModal';
 import { PollSticker, QuestionSticker } from '../story/StoryStickers';
+import { CameraCaptureModal } from '../camera/CameraCaptureModal';
 import { api } from '../../api/client';
 import { MusicTrack } from '../../types';
-import { Smile } from 'lucide-react';
+import { Smile, Camera } from 'lucide-react';
 import { compressImage } from '../../utils/imageCompressor';
 
 interface CreateStoryModalProps {
@@ -42,6 +43,7 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
   const [isVideo, setIsVideo] = useState(false);
   const [caption, setCaption] = useState('');
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   // Duration: 5s, 10s, 15s, 30s (default 10s)
   const [storyDuration, setStoryDuration] = useState<number>(10);
@@ -61,6 +63,13 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
   const [error, setError] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoCaptured = (file: File) => {
+    setSelectedFile(file);
+    setIsVideo(false);
+    setPreviewUrl(URL.createObjectURL(file));
+    setError('');
+  };
 
   if (!isOpen) return null;
 
@@ -169,32 +178,47 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
               </button>
             </div>
 
-            {/* Dropzone */}
-            <div className="flex-1 p-6 flex flex-col items-center justify-center">
+            {/* Dropzone & Camera Selection */}
+            <div className="flex-1 p-6 flex flex-col items-center justify-center gap-4">
               {error && (
-                <div className="mb-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+                <div className="w-full mb-2 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
+              {/* Botão de Tirar Foto com a Câmera */}
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full aspect-[9/14] max-h-[500px] border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-3xl flex flex-col items-center justify-center gap-4 p-6 cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition-all group"
+                onClick={() => setShowCamera(true)}
+                className="w-full aspect-[16/10] border-2 border-dashed border-pink-500/50 hover:border-pink-400 rounded-3xl flex flex-col items-center justify-center gap-3 p-5 cursor-pointer bg-gradient-to-b from-pink-500/10 to-transparent hover:from-pink-500/20 transition-all group"
               >
-                <div className="w-16 h-16 rounded-full bg-brand-500/10 group-hover:bg-brand-500/20 text-brand-400 flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg shadow-brand-500/10">
-                  <Upload className="w-8 h-8" />
+                <div className="w-14 h-14 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-lg shadow-pink-500/30 group-hover:scale-110 transition-transform">
+                  <Camera className="w-7 h-7" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-slate-200">Escolha uma foto ou vídeo</p>
-                  <p className="text-xs text-slate-400 mt-1">Toque para selecionar da galeria</p>
+                  <p className="text-sm font-bold text-white">Tirar Foto com a Câmera</p>
+                  <p className="text-xs text-pink-300/80 mt-0.5">Capture diretamente pelo app</p>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 text-[11px] font-semibold text-slate-300">
-                    <ImageIcon className="w-3.5 h-3.5 text-brand-400" /> Foto
+              </div>
+
+              {/* Botão de Galeria (Upload) */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full aspect-[16/10] border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-3xl flex flex-col items-center justify-center gap-3 p-5 cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition-all group"
+              >
+                <div className="w-14 h-14 rounded-full bg-brand-500/10 group-hover:bg-brand-500/20 text-brand-400 flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg shadow-brand-500/10">
+                  <Upload className="w-7 h-7" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-slate-200">Escolher da Galeria</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Fotos ou vídeos salvos no aparelho</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300">
+                    <ImageIcon className="w-3 h-3 text-brand-400" /> Foto
                   </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 text-[11px] font-semibold text-slate-300">
-                    <Video className="w-3.5 h-3.5 text-pink-400" /> Vídeo
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300">
+                    <Video className="w-3 h-3 text-pink-400" /> Vídeo (até 100MB)
                   </span>
                 </div>
               </div>
@@ -501,6 +525,13 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
             setShowMusicTrimmer(true);
           }}
           selectedTrack={selectedMusic}
+        />
+
+        {/* Modal de Câmera do App */}
+        <CameraCaptureModal
+          isOpen={showCamera}
+          onClose={() => setShowCamera(false)}
+          onPhotoCaptured={handlePhotoCaptured}
         />
       </div>
     </div>
