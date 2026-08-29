@@ -11,8 +11,8 @@ build/
 # Variáveis de ambiente e segredos
 .env
 .env.local
-.env.production
 .env.development
+!client/.env.production
 
 # Logs
 npm-debug.log*

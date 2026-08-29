@@ -11,8 +11,9 @@ export function getBackendBaseUrl(): string {
   }
 
   // Se houver variável de ambiente configurada na Vercel / Produção
-  if (import.meta.env.VITE_API_URL) {
-    return (import.meta.env.VITE_API_URL as string).trim().replace(/\/+$/, '');
+  const env = (import.meta as any).env;
+  if (env && env.VITE_API_URL) {
+    return String(env.VITE_API_URL).trim().replace(/\/+$/, '');
   }
 
   const hostname = window.location.hostname;
