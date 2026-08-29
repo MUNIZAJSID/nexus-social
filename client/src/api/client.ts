@@ -10,6 +10,11 @@ export function getBackendBaseUrl(): string {
     return customUrl.trim().replace(/\/+$/, '');
   }
 
+  // Se houver variável de ambiente configurada na Vercel / Produção
+  if (import.meta.env.VITE_API_URL) {
+    return (import.meta.env.VITE_API_URL as string).trim().replace(/\/+$/, '');
+  }
+
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
 
