@@ -1,0 +1,26 @@
+{
+  "name": "localsocial",
+  "version": "1.0.0",
+  "description": "Rede Social Local Multiusuário inspirada no Instagram com armazenamento próprio e tempo real",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"bgBlue.bold,bgGreen.bold\" \"npm.cmd run dev:server\" \"npm.cmd run dev:client\"",
+    "dev:server": "npm.cmd --prefix server run dev",
+    "dev:client": "npm.cmd --prefix client run dev",
+    "build": "npm.cmd --prefix server run build && npm.cmd --prefix client run build",
+    "start": "npm.cmd --prefix server run start",
+    "db:push": "npm.cmd --prefix server run db:push",
+    "db:seed": "npm.cmd --prefix server run db:seed",
+    "backup": "npm.cmd --prefix server run backup",
+    "tunnel": ".\\cloudflared.exe tunnel --url http://localhost:5000",
+    "mobile:build": "npm.cmd --prefix client run build && npm.cmd --prefix mobile run sync",
+    "mobile:sync": "npm.cmd --prefix mobile run sync",
+    "mobile:open": "npm.cmd --prefix mobile run open:android",
+    "install:all": "npm.cmd install && npm.cmd --prefix server install && npm.cmd --prefix client install && npm.cmd --prefix mobile install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "author": "LocalSocial",
+  "license": "MIT"
+}

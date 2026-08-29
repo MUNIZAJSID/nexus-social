@@ -1,0 +1,22 @@
+{
+  "name": "localsocial-mobile",
+  "version": "1.0.0",
+  "description": "Aplicativo Mobile NEXUS Social com Capacitor",
+  "private": true,
+  "scripts": {
+    "sync": "npx @capacitor/cli sync android",
+    "open:android": "npx @capacitor/cli open android",
+    "build:copy": "npm.cmd --prefix ../client run build && npx @capacitor/cli copy android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/haptics": "^6.0.2",
+    "@capacitor/keyboard": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

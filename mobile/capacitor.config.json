@@ -1,0 +1,17 @@
+{
+  "appId": "com.localsocial.app",
+  "appName": "NEXUS Social",
+  "webDir": "../client/dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true,
+    "allowNavigation": [
+      "*.trycloudflare.com",
+      "192.168.*",
+      "localhost"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Servidor Backend e API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: localsocial_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - JWT_SECRET=localsocial_super_secret_jwt_key_2026_docker
+      - DATABASE_URL=file:/app/server/localsocial.db
+      - STORAGE_DIR=/app/server/storage
+    volumes:
+      - ./server/storage:/app/server/storage
+      - ./localsocial.db:/app/server/localsocial.db
+      - ./backups:/app/backups
+
+  # Servidor Frontend React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: localsocial_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
