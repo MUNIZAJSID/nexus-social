@@ -3,7 +3,7 @@ import { prisma } from '../db/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export async function getUserHighlights(req: AuthRequest, res: Response) {
-  const { userId } = req.params;
+  const userId = String(req.params.userId || '');
 
   try {
     const highlights = await prisma.highlight.findMany({
@@ -112,7 +112,7 @@ export async function createHighlight(req: AuthRequest, res: Response) {
 
 export async function deleteHighlight(req: AuthRequest, res: Response) {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const id = String(req.params.id || '');
 
   try {
     const highlight = await prisma.highlight.findUnique({
