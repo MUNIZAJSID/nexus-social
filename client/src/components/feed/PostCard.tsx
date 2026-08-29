@@ -363,6 +363,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
                 loop
                 muted={isMuted}
                 playsInline
+                preload="metadata"
                 onTimeUpdate={handleTimeUpdate}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
@@ -416,6 +417,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
               alt="Post media"
               className="w-full h-full object-contain transition-transform duration-200"
               loading="lazy"
+              decoding="async"
             />
           )
         ) : (

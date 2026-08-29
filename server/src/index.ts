@@ -34,8 +34,20 @@ async function bootstrap() {
   app.use(express.json({ limit: '150mb' }));
   app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
-  // 5. Servir arquivos estáticos de mídia local (/storage/...)
-  app.use('/storage', express.static(STORAGE_PATHS.root));
+  // 5. Servir arquivos estáticos de mídia com cache de alta performance no navegador (/storage/...)
+  app.use(
+    '/storage',
+    express.static(STORAGE_PATHS.root, {
+      maxAge: '30d',
+      etag: true,
+      lastModified: true,
+      immutable: true,
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      },
+    })
+  );
 
   // 6. Rotas da API REST
   app.use('/api', apiRouter);
@@ -69,6 +81,13 @@ async function bootstrap() {
   // 9. Inicia o servidor escutando em todas as interfaces de rede (0.0.0.0)
   server.listen(ENV.PORT, ENV.HOST, () => {
     printServerBanner(ENV.PORT, 3000);
+
+    // Keep-alive inteligente: ping no próprio servidor para evitar hibernação no Render
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+      setInterval(() => {
+        http.get(`http://localhost:${ENV.PORT}/api/health`, () => {}).on('error', () => {});
+      }, 8 * 60 * 1000); // a cada 8 minutos
+    }
   });
 }
 

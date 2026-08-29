@@ -6,6 +6,7 @@ import { ImagePlus, MapPin, X, Film, Music, Disc } from 'lucide-react';
 import { MusicPickerModal } from '../music/MusicPickerModal';
 import { api } from '../../api/client';
 import { Post, MusicTrack } from '../../types';
+import { compressImage } from '../../utils/imageCompressor';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -84,9 +85,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         formData.append('musicAudioUrl', selectedMusic.audioUrl);
       }
 
-      mediaList.forEach((item) => {
-        formData.append('media', item.file);
-      });
+      for (const item of mediaList) {
+        if (!item.isVideo) {
+          const compressed = await compressImage(item.file);
+          formData.append('media', compressed);
+        } else {
+          formData.append('media', item.file);
+        }
+      }
 
       const response = await api.post('/posts', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

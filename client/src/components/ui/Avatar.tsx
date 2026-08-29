@@ -55,6 +55,8 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img
           src={mediaUrl}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-800 bg-slate-100 dark:bg-slate-800`}
           onError={(e) => {
             // Fallback caso imagem quebre

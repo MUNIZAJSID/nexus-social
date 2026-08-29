@@ -22,6 +22,7 @@ import { PollSticker, QuestionSticker } from '../story/StoryStickers';
 import { api } from '../../api/client';
 import { MusicTrack } from '../../types';
 import { Smile } from 'lucide-react';
+import { compressImage } from '../../utils/imageCompressor';
 
 interface CreateStoryModalProps {
   isOpen: boolean;
@@ -100,8 +101,10 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
     setIsLoading(true);
     setError('');
 
+    const fileToUpload = !isVideo ? await compressImage(selectedFile) : selectedFile;
+
     const formData = new FormData();
-    formData.append('media', selectedFile);
+    formData.append('media', fileToUpload);
     formData.append('duration', String(storyDuration));
 
     if (caption.trim()) {
