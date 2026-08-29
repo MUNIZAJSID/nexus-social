@@ -249,7 +249,16 @@ export interface Notification {
   id: string;
   recipientId: string;
   actorId: string;
-  type: 'FOLLOW' | 'FOLLOW_REQUEST' | 'FOLLOW_ACCEPT' | 'LIKE_POST' | 'COMMENT_POST' | 'REPLY_COMMENT';
+  type:
+    | 'FOLLOW'
+    | 'FOLLOW_REQUEST'
+    | 'FOLLOW_ACCEPT'
+    | 'LIKE_POST'
+    | 'COMMENT_POST'
+    | 'REPLY_COMMENT'
+    | 'NEW_POST'
+    | 'NEW_STORY'
+    | 'NEW_MESSAGE';
   entityId?: string | null;
   isRead: boolean;
   createdAt: string;

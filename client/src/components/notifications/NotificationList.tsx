@@ -10,6 +10,9 @@ import {
   X,
   CheckCheck,
   ShieldAlert,
+  ImagePlus,
+  Sparkles,
+  MessageCircle,
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -85,6 +88,12 @@ export const NotificationList: React.FC = () => {
         return <UserPlus className="w-3.5 h-3.5 text-brand-500" />;
       case 'FOLLOW_REQUEST':
         return <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />;
+      case 'NEW_POST':
+        return <ImagePlus className="w-3.5 h-3.5 text-purple-500" />;
+      case 'NEW_STORY':
+        return <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />;
+      case 'NEW_MESSAGE':
+        return <MessageCircle className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />;
       default:
         return <Heart className="w-3.5 h-3.5 text-brand-500" />;
     }
@@ -104,6 +113,12 @@ export const NotificationList: React.FC = () => {
         return 'enviou uma solicitação para seguir seu perfil privado.';
       case 'FOLLOW_ACCEPT':
         return 'aceitou sua solicitação para seguir.';
+      case 'NEW_POST':
+        return 'publicou uma nova foto ou vídeo.';
+      case 'NEW_STORY':
+        return 'adicionou um novo story.';
+      case 'NEW_MESSAGE':
+        return 'enviou uma nova mensagem no bate-papo.';
       default:
         return 'interagiu com você.';
     }
@@ -229,9 +244,27 @@ export const NotificationList: React.FC = () => {
               {notif.entityId && notif.type.includes('POST') && (
                 <Link
                   to={`/post/${notif.entityId}`}
-                  className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline whitespace-nowrap"
+                  className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline whitespace-nowrap px-2.5 py-1 rounded-lg hover:bg-brand-500/10"
                 >
                   Ver Post
+                </Link>
+              )}
+
+              {notif.type === 'NEW_STORY' && (
+                <Link
+                  to="/"
+                  className="text-xs font-bold text-pink-500 hover:underline whitespace-nowrap px-2.5 py-1 rounded-lg hover:bg-pink-500/10"
+                >
+                  Ver Story
+                </Link>
+              )}
+
+              {notif.type === 'NEW_MESSAGE' && (
+                <Link
+                  to="/direct"
+                  className="text-xs font-bold text-emerald-500 hover:underline whitespace-nowrap px-2.5 py-1 rounded-lg hover:bg-emerald-500/10"
+                >
+                  Abrir Chat
                 </Link>
               )}
             </div>

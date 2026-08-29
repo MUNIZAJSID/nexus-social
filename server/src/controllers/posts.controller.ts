@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../db/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { deleteStorageFile } from '../services/storage.service';
+import { emitNotification } from '../socket/socket.handler';
 
 export async function createPost(req: AuthRequest, res: Response) {
   const userId = req.user!.id;
@@ -47,6 +48,33 @@ export async function createPost(req: AuthRequest, res: Response) {
       },
     },
   });
+
+  // Notificar todos os seguidores sobre a nova publicação
+  try {
+    const followers = await prisma.follow.findMany({
+      where: { followingId: userId },
+      select: { followerId: true },
+    });
+
+    for (const f of followers) {
+      const notification = await prisma.notification.create({
+        data: {
+          recipientId: f.followerId,
+          actorId: userId,
+          type: 'NEW_POST',
+          entityId: post.id,
+        },
+        include: {
+          actor: {
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          },
+        },
+      });
+      emitNotification(f.followerId, notification);
+    }
+  } catch (err) {
+    console.error('Erro ao notificar seguidores sobre o post:', err);
+  }
 
   return res.status(201).json({
     success: true,

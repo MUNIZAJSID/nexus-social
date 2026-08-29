@@ -207,6 +207,33 @@ export async function createStory(req: AuthRequest, res: Response) {
     },
   });
 
+  // Notificar todos os seguidores sobre o novo story
+  try {
+    const followers = await prisma.follow.findMany({
+      where: { followingId: userId },
+      select: { followerId: true },
+    });
+
+    for (const f of followers) {
+      const notification = await prisma.notification.create({
+        data: {
+          recipientId: f.followerId,
+          actorId: userId,
+          type: 'NEW_STORY',
+          entityId: story.id,
+        },
+        include: {
+          actor: {
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          },
+        },
+      });
+      emitNotification(f.followerId, notification);
+    }
+  } catch (err) {
+    console.error('Erro ao notificar seguidores sobre story:', err);
+  }
+
   return res.status(201).json({
     success: true,
     message: 'Story publicado com sucesso!',
