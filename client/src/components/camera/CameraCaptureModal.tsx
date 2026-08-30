@@ -73,6 +73,13 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
     }
   }, [stream]);
 
+  // Garante que o stream de vídeo esteja sempre anexado ao elemento <video>
+  useEffect(() => {
+    if (videoRef.current && stream && !capturedDataUrl) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream, capturedDataUrl]);
+
   useEffect(() => {
     if (isOpen) {
       setCapturedDataUrl(null);
