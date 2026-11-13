@@ -179,7 +179,7 @@ export const LoginPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center gap-2 text-[11px] text-slate-500">
           <div className="flex items-center gap-2">
             <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Hospedado no seu PC • Acesso Multiusuário LAN</span>
+            <span>NEXUS Social • Conectado na Nuvem</span>
           </div>
 
           <button
@@ -208,7 +208,7 @@ export const LoginPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-100">Endereço do Servidor</h3>
-                    <p className="text-xs text-slate-400">Conecte o App ao seu computador</p>
+                    <p className="text-xs text-slate-400">Configurar endpoint da API do aplicativo</p>
                   </div>
                 </div>
                 <button

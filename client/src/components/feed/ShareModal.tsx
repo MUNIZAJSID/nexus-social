@@ -53,7 +53,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
         <div className="p-3.5 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-xs text-brand-700 dark:text-brand-300 flex items-start gap-2.5">
           <Wifi className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>
-            Qualquer dispositivo (celular ou outro computador) na mesma rede Wi-Fi que abrir este link conseguirá visualizar e interagir!
+            Qualquer pessoa com este link poderá visualizar e interagir com a publicação!
           </span>
         </div>
       </div>

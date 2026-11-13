@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wifi, Sparkles, UserPlus, Check } from 'lucide-react';
+import { Sparkles, UserPlus, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
 import { api } from '../../api/client';
@@ -10,10 +10,6 @@ export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
   const [suggestions, setSuggestions] = useState<User[]>([]);
   const [followingStates, setFollowingStates] = useState<{ [key: string]: boolean }>({});
-  const [serverInfo, setServerInfo] = useState<{ host: string; status: string }>({
-    host: typeof window !== 'undefined' ? window.location.host : 'localhost:3000',
-    status: 'online',
-  });
 
   useEffect(() => {
     if (user) {
@@ -120,24 +116,6 @@ export const RightSidebar: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Network Server Info Card */}
-      <div className="mt-auto p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 text-slate-200 border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-xs">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <Wifi className="w-4 h-4" />
-          <span>Servidor Local Ativo</span>
-        </div>
-        <p className="text-[11px] text-slate-400 mb-2 leading-relaxed">
-          Este nó está hospedado no seu computador. Outros celulares e PCs na mesma rede podem acessar em:
-        </p>
-        <div className="bg-black/50 px-2.5 py-1.5 rounded-lg border border-slate-800 font-mono text-[11px] text-brand-300 select-all truncate">
-          http://{serverInfo.host}
-        </div>
-      </div>
     </aside>
   );
 };
