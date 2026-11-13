@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -18,7 +18,6 @@ import { VerifiedBadge } from '../ui/VerifiedBadge';
 import { Button } from '../ui/Button';
 import { EditProfileModal } from './EditProfileModal';
 import { FollowersModal } from './FollowersModal';
-import { ProfileHighlights } from './ProfileHighlights';
 import { api, getMediaUrl } from '../../api/client';
 import { User } from '../../types';
 
@@ -43,6 +42,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onProfile
   const [isFollowing, setIsFollowing] = useState(!!profile.isFollowing);
   const [hasRequested, setHasRequested] = useState(!!profile.hasRequestedFollow);
   const [followersCount, setFollowersCount] = useState(profile.counts?.followers || 0);
+
+  useEffect(() => {
+    setIsFollowing(!!profile.isFollowing);
+    setHasRequested(!!profile.hasRequestedFollow);
+    setFollowersCount(profile.counts?.followers || 0);
+  }, [profile.id, profile.isFollowing, profile.hasRequestedFollow, profile.counts?.followers]);
 
   const isSelf = currentUser?.id === profile.id;
   const isOnline = isUserOnline(profile.id);
@@ -228,9 +233,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onProfile
               <span className="text-xs text-slate-500 dark:text-slate-400">seguindo</span>
             </button>
           </div>
-
-          {/* Stories em Destaque (Highlights) */}
-          <ProfileHighlights highlights={profile.highlights} />
         </div>
       </div>
 

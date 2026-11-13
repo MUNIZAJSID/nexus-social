@@ -138,6 +138,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           title = 'Nova Curtida';
           msg = `@${notif.actor.username} curtiu sua publicação.`;
           link = notif.entityId ? `/post/${notif.entityId}` : undefined;
+        } else if (notif.type === 'LIKE_STORY') {
+          title = 'Curtida no Story';
+          msg = `@${notif.actor.username} curtiu seu story.`;
+          link = '/';
         } else if (notif.type === 'COMMENT_POST') {
           title = 'Novo Comentário';
           msg = `@${notif.actor.username} comentou no seu post.`;
@@ -190,7 +194,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           message: messagePreview,
           avatarUrl: lastMessage.sender?.avatarUrl,
           type: 'NEW_MESSAGE',
-          link: '/direct',
+          link: '/chat',
         };
 
         setToasts((prev) => [newToast, ...prev.slice(0, 2)]);

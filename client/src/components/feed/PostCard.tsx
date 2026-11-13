@@ -66,6 +66,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
   const currentMedia = mediaList[currentMediaIndex];
   const isCurrentVideo = currentMedia?.mediaType === 'VIDEO';
 
+  const createMusicAudio = (audioUrl: string, startTime: number, volume: number) => {
+    const audio = new Audio(audioUrl);
+    audio.loop = true;
+    audio.volume = volume;
+    audio.onended = () => setIsPlayingMusic(false);
+
+    const applyStartTime = () => {
+      if (startTime > 0 && Math.abs(audio.currentTime - startTime) > 0.4) {
+        try {
+          audio.currentTime = startTime;
+        } catch {}
+      }
+    };
+    audio.addEventListener('loadedmetadata', applyStartTime);
+    return { audio, applyStartTime };
+  };
+
   // Auto-play de Vídeo e Trilha Sonora Musical quando o post está visível na tela
   useEffect(() => {
     const card = cardRef.current;
@@ -76,16 +93,19 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
         if (entry.isIntersecting) {
           // 1. Se o post tiver música/trilha sonora cadastrada, inicia o som automaticamente
           if (post.musicAudioUrl) {
+            const targetStart = post.musicStartTime || 0;
+            let applyStart: (() => void) | null = null;
             if (!musicAudioRef.current) {
-              const audio = new Audio(post.musicAudioUrl);
-              audio.loop = true;
-              audio.volume = 0.85;
-              audio.onended = () => setIsPlayingMusic(false);
-              musicAudioRef.current = audio;
+              const created = createMusicAudio(post.musicAudioUrl, targetStart, 0.85);
+              musicAudioRef.current = created.audio;
+              applyStart = created.applyStartTime;
             }
             musicAudioRef.current
               .play()
-              .then(() => setIsPlayingMusic(true))
+              .then(() => {
+                applyStart?.();
+                setIsPlayingMusic(true);
+              })
               .catch(() => {
                 // Caso o navegador bloqueie até a primeira interação de toque/clique
               });
@@ -277,14 +297,19 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
       }
       setIsPlayingMusic(false);
     } else {
+      const targetStart = post.musicStartTime || 0;
+      let applyStart: (() => void) | null = null;
       if (!musicAudioRef.current) {
-        const audio = new Audio(post.musicAudioUrl);
-        audio.loop = true;
-        audio.volume = 0.8;
-        audio.onended = () => setIsPlayingMusic(false);
-        musicAudioRef.current = audio;
+        const created = createMusicAudio(post.musicAudioUrl, targetStart, 0.8);
+        musicAudioRef.current = created.audio;
+        applyStart = created.applyStartTime;
       }
-      musicAudioRef.current.play().catch(() => {});
+      musicAudioRef.current
+        .play()
+        .then(() => {
+          applyStart?.();
+        })
+        .catch(() => {});
       setIsPlayingMusic(true);
     }
   };

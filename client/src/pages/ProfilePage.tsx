@@ -66,9 +66,13 @@ export const ProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchProfileAndPosts();
+    setProfile(null);
+    setPosts([]);
+    setHighlights([]);
+    setSavedPosts([]);
     setActiveTab('posts');
     setViewMode('grid');
+    fetchProfileAndPosts();
   }, [username]);
 
   // Carrega posts salvos se for o próprio perfil e clicar na aba

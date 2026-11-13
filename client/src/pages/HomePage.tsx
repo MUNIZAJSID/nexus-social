@@ -39,6 +39,9 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchFeed(1);
+    const handlePostCreated = () => fetchFeed(1, true);
+    window.addEventListener('post_created', handlePostCreated);
+    return () => window.removeEventListener('post_created', handlePostCreated);
   }, [fetchFeed]);
 
   const handlePostDeleted = (postId: string) => {

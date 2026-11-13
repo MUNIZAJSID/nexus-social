@@ -3,11 +3,32 @@ import axios from 'axios';
 // Determina dinamicamente a URL base da API a partir do host do navegador ou configuração mobile
 export function getBackendBaseUrl(): string {
   if (typeof window === 'undefined') return 'https://nexus-social-t5ec.onrender.com';
-  
+
   // Se houver uma URL customizada configurada pelo usuário (ex: no app mobile)
   const customUrl = localStorage.getItem('localsocial_server_url');
   if (customUrl && customUrl.trim()) {
     return customUrl.trim().replace(/\/+$/, '');
+  }
+
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  const port = window.location.port;
+  const isCapacitorNative =
+    protocol === 'capacitor:' ||
+    protocol === 'ionic:' ||
+    Boolean((window as any).Capacitor?.isNativePlatform?.());
+
+  // Em navegador local (Vite :3000/:5173 ou Express :5000 em localhost/IP da rede)
+  if (!isCapacitorNative) {
+    if (port === '3000' || port === '5173') {
+      return `${protocol}//${hostname}:5000`;
+    }
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && (port === '5000' || !port)) {
+      return `${protocol}//${hostname}:5000`;
+    }
+    if (port === '5000' || hostname.endsWith('.trycloudflare.com')) {
+      return `${protocol}//${window.location.host}`;
+    }
   }
 
   // Se houver variável de ambiente configurada na Vercel / Produção
@@ -16,21 +37,8 @@ export function getBackendBaseUrl(): string {
     return String(env.VITE_API_URL).trim().replace(/\/+$/, '');
   }
 
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol;
-
-  // Se estiver rodando localmente (localhost ou IP local)
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || window.location.port === '3000') {
-    return `${protocol}//${hostname}:5000`;
-  }
-
-  // Se estiver rodando dentro do Capacitor (Android/iOS)
-  if (protocol === 'capacitor:' || protocol === 'ionic:') {
-    return customUrl || 'https://nexus-social-t5ec.onrender.com';
-  }
-
-  // Se estiver na Vercel ou produção na nuvem, usa o servidor oficial do Render
-  if (hostname.includes('vercel.app') || !window.location.port) {
+  // Se estiver rodando dentro do Capacitor (Android/iOS) ou na Vercel
+  if (isCapacitorNative || hostname.includes('vercel.app')) {
     return 'https://nexus-social-t5ec.onrender.com';
   }
 

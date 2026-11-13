@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../db/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { getStorageStats, deleteStorageFile } from '../services/storage.service';
+import { buildCaseVariants } from '../utils/queryHelpers';
 
 export async function getAdminOverview(_req: AuthRequest, res: Response) {
   const [totalUsers, totalPosts, totalMessages, totalComments, totalLikes] = await Promise.all([
@@ -44,22 +45,27 @@ export async function getAdminOverview(_req: AuthRequest, res: Response) {
 }
 
 export async function getAllUsers(req: AuthRequest, res: Response) {
-  const query = ((req.query.q as string) || '').trim().toLowerCase();
+  const variants = buildCaseVariants((req.query.q as string) || '');
 
   const whereCondition: any = {};
-  if (query) {
-    whereCondition.OR = [
-      { username: { contains: query } },
-      { displayName: { contains: query } },
-      { email: { contains: query } },
-    ];
+  if (variants.length > 0) {
+    whereCondition.OR = variants.flatMap((v) => [
+      { username: { contains: v } },
+      { displayName: { contains: v } },
+      { email: { contains: v } },
+    ]);
   }
 
   const users = await prisma.user.findMany({
     where: whereCondition,
     include: {
       _count: {
-        select: { posts: true, followers: true, following: true, sentMessages: true },
+        select: {
+          posts: { where: { deletedAt: null } },
+          followers: true,
+          following: true,
+          sentMessages: true,
+        },
       },
     },
     orderBy: { createdAt: 'desc' },

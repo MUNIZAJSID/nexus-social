@@ -12,7 +12,7 @@
     "db:push": "npm.cmd --prefix server run db:push",
     "db:seed": "npm.cmd --prefix server run db:seed",
     "backup": "npm.cmd --prefix server run backup",
-    "tunnel": ".\\cloudflared.exe tunnel --url http://localhost:5000",
+    "tunnel": "node -e \"const fs=require('fs'),cp=require('child_process');const bin=fs.existsSync('cloudflared.exe')?'.\\\\cloudflared.exe':'cloudflared';const r=cp.spawnSync(bin,['tunnel','--url','http://localhost:5000'],{stdio:'inherit'});process.exit(r.status??1);\"",
     "mobile:build": "npm.cmd --prefix client run build && npm.cmd --prefix mobile run sync",
     "mobile:sync": "npm.cmd --prefix mobile run sync",
     "mobile:open": "npm.cmd --prefix mobile run open:android",

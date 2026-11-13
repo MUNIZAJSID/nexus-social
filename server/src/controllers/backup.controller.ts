@@ -1,64 +1,27 @@
 import { Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import archiver from 'archiver';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { STORAGE_PATHS } from '../services/storage.service';
+import { createZipBackup } from '../utils/dbBackup';
 
 export async function createBackup(_req: AuthRequest, res: Response) {
   try {
-    if (!fs.existsSync(STORAGE_PATHS.backups)) {
-      fs.mkdirSync(STORAGE_PATHS.backups, { recursive: true });
-    }
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-    const backupFileName = `localsocial_backup_${timestamp}.zip`;
-    const backupFilePath = path.join(STORAGE_PATHS.backups, backupFileName);
-
-    const output = fs.createWriteStream(backupFilePath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
-
-    output.on('close', () => {
-      const stats = fs.statSync(backupFilePath);
-      return res.json({
-        success: true,
-        message: 'Backup gerado com sucesso!',
-        backup: {
-          filename: backupFileName,
-          size: `${(stats.size / (1024 * 1024)).toFixed(2)} MB`,
-          createdAt: new Date(),
-        },
-      });
+    const backup = await createZipBackup();
+    return res.json({
+      success: true,
+      message: 'Backup gerado com sucesso!',
+      backup: {
+        filename: backup.filename,
+        size: backup.size,
+        createdAt: backup.createdAt,
+      },
     });
-
-    archive.on('error', (err) => {
-      console.error('Erro ao gerar backup ZIP:', err);
-      return res.status(500).json({ success: false, message: 'Erro ao gerar arquivo de backup.' });
-    });
-
-    archive.pipe(output);
-
-    const dbPaths = [
-      path.resolve(process.cwd(), 'localsocial.db'),
-      path.resolve(process.cwd(), 'server/localsocial.db'),
-      path.resolve(process.cwd(), 'server/prisma/localsocial.db'),
-    ];
-
-    for (const dbp of dbPaths) {
-      if (fs.existsSync(dbp)) {
-        archive.file(dbp, { name: 'database/localsocial.db' });
-        break;
-      }
-    }
-
-    if (fs.existsSync(STORAGE_PATHS.root)) {
-      archive.directory(STORAGE_PATHS.root, 'storage');
-    }
-
-    await archive.finalize();
   } catch (error) {
     console.error('Erro no controller de backup:', error);
-    return res.status(500).json({ success: false, message: 'Falha ao criar backup.' });
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, message: 'Falha ao criar backup.' });
+    }
   }
 }
 

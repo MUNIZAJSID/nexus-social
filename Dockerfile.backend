@@ -8,7 +8,6 @@ WORKDIR /app/server
 RUN npm install
 
 COPY server/ ./
-RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npm run build
 
 # Imagem final de execução
@@ -26,4 +25,4 @@ ENV HOST=0.0.0.0
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+CMD ["npm", "start"]

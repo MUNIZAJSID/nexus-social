@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "prebuild": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')) fs.writeFileSync('.env', 'DATABASE_URL=\\\"postgresql://postgres:ncpacpl100ncpacpl100@db.lgopbboqmomyoqdfgpgi.supabase.co:5432/postgres\\\"\\nJWT_SECRET=nexus_secret_jwt_2026\\n');\"",
+    "prebuild": "node prisma/sync-provider.js",
     "build": "prisma generate && tsc",
+    "prestart": "node prisma/sync-provider.js --generate",
     "start": "node dist/index.js",
-    "predb:push": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')) fs.writeFileSync('.env', 'DATABASE_URL=\\\"postgresql://postgres:ncpacpl100ncpacpl100@db.lgopbboqmomyoqdfgpgi.supabase.co:5432/postgres\\\"\\nJWT_SECRET=nexus_secret_jwt_2026\\n');\"",
+    "predb:push": "node prisma/sync-provider.js",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "backup": "tsx src/scripts/backup.ts"

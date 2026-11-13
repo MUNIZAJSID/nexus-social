@@ -161,6 +161,27 @@ export async function updateAvatar(req: AuthRequest, res: Response) {
   });
 }
 
+async function canAccessUserConnections(
+  targetUser: { id: string; isPrivate: boolean },
+  currentUserId?: string,
+  currentUserRole?: string
+): Promise<boolean> {
+  if (!targetUser.isPrivate || currentUserId === targetUser.id || currentUserRole === 'ADMIN') {
+    return true;
+  }
+  if (!currentUserId) return false;
+
+  const follow = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: currentUserId,
+        followingId: targetUser.id,
+      },
+    },
+  });
+  return !!follow;
+}
+
 export async function getUserFollowers(req: AuthRequest, res: Response) {
   const username = String(req.params.username || '').toLowerCase();
   const currentUserId = req.user?.id;
@@ -171,6 +192,10 @@ export async function getUserFollowers(req: AuthRequest, res: Response) {
 
   if (!targetUser) {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  }
+
+  if (!(await canAccessUserConnections(targetUser, currentUserId, req.user?.role))) {
+    return res.status(403).json({ success: false, message: 'Esta conta é privada.' });
   }
 
   const followers = await prisma.follow.findMany({
@@ -226,6 +251,10 @@ export async function getUserFollowing(req: AuthRequest, res: Response) {
 
   if (!targetUser) {
     return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  }
+
+  if (!(await canAccessUserConnections(targetUser, currentUserId, req.user?.role))) {
+    return res.status(403).json({ success: false, message: 'Esta conta é privada.' });
   }
 
   const followings = await prisma.follow.findMany({

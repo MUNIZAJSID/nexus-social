@@ -92,6 +92,7 @@ export const App: React.FC = () => {
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/clips" element={<ClipsPage />} />
                 <Route path="/chat" element={<ChatPage />} />
+                <Route path="/direct" element={<Navigate to="/chat" replace />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path="/post/:postId" element={<PostDetailPage />} />

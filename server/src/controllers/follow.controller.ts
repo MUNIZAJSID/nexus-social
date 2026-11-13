@@ -178,11 +178,18 @@ export async function respondFollowRequest(req: AuthRequest, res: Response) {
         where: { id: requestId },
         data: { status: 'ACCEPTED' },
       }),
-      prisma.follow.create({
-        data: {
+      prisma.follow.upsert({
+        where: {
+          followerId_followingId: {
+            followerId: request.requesterId,
+            followingId: currentUserId,
+          },
+        },
+        create: {
           followerId: request.requesterId,
           followingId: currentUserId,
         },
+        update: {},
       }),
     ]);
 

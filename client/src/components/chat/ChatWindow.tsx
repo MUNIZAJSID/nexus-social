@@ -323,7 +323,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {/* Preview do anexo selecionado */}
         {previewUrl && (
           <div className="relative inline-block mb-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            <img src={previewUrl} alt="Preview anexo" className="w-20 h-20 object-cover rounded-lg" />
+            {selectedFile?.type.startsWith('video/') ? (
+              <video src={previewUrl} className="w-24 h-20 object-cover rounded-lg bg-black" muted playsInline />
+            ) : (
+              <img src={previewUrl} alt="Preview anexo" className="w-20 h-20 object-cover rounded-lg" />
+            )}
             <button
               onClick={handleRemoveFile}
               className="absolute -top-1.5 -right-1.5 p-1 bg-rose-600 text-white rounded-full shadow-md"

@@ -1,23 +1,27 @@
 import { Response } from 'express';
 import { prisma } from '../db/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { buildCaseVariants } from '../utils/queryHelpers';
 
 export async function search(req: AuthRequest, res: Response) {
-  const query = ((req.query.q as string) || '').trim().toLowerCase();
+  const rawQuery = ((req.query.q as string) || '').trim();
+  const query = rawQuery.toLowerCase();
   const currentUserId = req.user?.id;
 
   if (!query) {
     return res.json({ success: true, users: [], posts: [] });
   }
 
+  const variants = buildCaseVariants(rawQuery);
+
   // Busca usuários
   const users = await prisma.user.findMany({
     where: {
       isBlocked: false,
-      OR: [
-        { username: { contains: query } },
-        { displayName: { contains: query } },
-      ],
+      OR: variants.flatMap((v) => [
+        { username: { contains: v } },
+        { displayName: { contains: v } },
+      ]),
     },
     take: 20,
     select: {
@@ -27,8 +31,12 @@ export async function search(req: AuthRequest, res: Response) {
       avatarUrl: true,
       bio: true,
       isPrivate: true,
+      isVerified: true,
       _count: {
-        select: { followers: true, posts: true },
+        select: {
+          followers: true,
+          posts: { where: { deletedAt: null } },
+        },
       },
     },
   });
@@ -60,10 +68,10 @@ export async function search(req: AuthRequest, res: Response) {
     where: {
       deletedAt: null,
       user: { isPrivate: false },
-      OR: [
-        { caption: { contains: query } },
-        { location: { contains: query } },
-      ],
+      OR: variants.flatMap((v) => [
+        { caption: { contains: v } },
+        { location: { contains: v } },
+      ]),
     },
     include: {
       media: { orderBy: { order: 'asc' } },

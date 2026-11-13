@@ -9,10 +9,10 @@ export async function toggleLikePost(req: AuthRequest, res: Response) {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true },
+    select: { id: true, userId: true, deletedAt: true },
   });
 
-  if (!post) {
+  if (!post || post.deletedAt) {
     return res.status(404).json({ success: false, message: 'Publicação não encontrada.' });
   }
 
@@ -26,12 +26,10 @@ export async function toggleLikePost(req: AuthRequest, res: Response) {
   });
 
   if (existingLike) {
-    await prisma.like.delete({
+    await prisma.like.deleteMany({
       where: {
-        userId_postId: {
-          userId: currentUserId,
-          postId,
-        },
+        userId: currentUserId,
+        postId,
       },
     });
 
@@ -44,16 +42,22 @@ export async function toggleLikePost(req: AuthRequest, res: Response) {
     });
   }
 
-  await prisma.like.create({
-    data: {
-      userId: currentUserId,
-      postId,
-    },
-  });
+  let createdNewLike = false;
+  try {
+    await prisma.like.create({
+      data: {
+        userId: currentUserId,
+        postId,
+      },
+    });
+    createdNewLike = true;
+  } catch (err: any) {
+    if (err?.code !== 'P2002') throw err;
+  }
 
   const likesCount = await prisma.like.count({ where: { postId } });
 
-  if (post.userId !== currentUserId) {
+  if (createdNewLike && post.userId !== currentUserId) {
     const notification = await prisma.notification.create({
       data: {
         recipientId: post.userId,

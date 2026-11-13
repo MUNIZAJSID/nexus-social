@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
-import { api, getMediaUrl } from '../../api/client';
+import { api, getMediaUrl, getBackendBaseUrl } from '../../api/client';
 import { AdminStats, User, Post } from '../../types';
 
 export const AdminStatsCards: React.FC<{ stats: AdminStats | null; isLoading: boolean }> = ({
@@ -318,7 +318,7 @@ export const AdminBackupPanel: React.FC = () => {
               </div>
 
               <a
-                href={`${api.defaults.baseURL}/backup/download/${b.filename}`}
+                href={`${getBackendBaseUrl()}/api/backup/download/${b.filename}?token=${encodeURIComponent(localStorage.getItem('localsocial_token') || '')}`}
                 download
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold hover:bg-brand-500/20 transition-colors"
               >

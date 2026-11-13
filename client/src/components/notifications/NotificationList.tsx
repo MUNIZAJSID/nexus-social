@@ -79,6 +79,7 @@ export const NotificationList: React.FC = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'LIKE_POST':
+      case 'LIKE_STORY':
         return <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />;
       case 'COMMENT_POST':
       case 'REPLY_COMMENT':
@@ -103,6 +104,8 @@ export const NotificationList: React.FC = () => {
     switch (notif.type) {
       case 'LIKE_POST':
         return 'curtiu sua publicação.';
+      case 'LIKE_STORY':
+        return 'curtiu seu story.';
       case 'COMMENT_POST':
         return 'comentou na sua foto.';
       case 'REPLY_COMMENT':
@@ -250,7 +253,7 @@ export const NotificationList: React.FC = () => {
                 </Link>
               )}
 
-              {notif.type === 'NEW_STORY' && (
+              {(notif.type === 'NEW_STORY' || notif.type === 'LIKE_STORY') && (
                 <Link
                   to="/"
                   className="text-xs font-bold text-pink-500 hover:underline whitespace-nowrap px-2.5 py-1 rounded-lg hover:bg-pink-500/10"
@@ -261,7 +264,7 @@ export const NotificationList: React.FC = () => {
 
               {notif.type === 'NEW_MESSAGE' && (
                 <Link
-                  to="/direct"
+                  to="/chat"
                   className="text-xs font-bold text-emerald-500 hover:underline whitespace-nowrap px-2.5 py-1 rounded-lg hover:bg-emerald-500/10"
                 >
                   Abrir Chat

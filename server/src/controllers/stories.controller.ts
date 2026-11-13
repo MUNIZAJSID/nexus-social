@@ -303,12 +303,10 @@ export async function toggleLikeStory(req: AuthRequest, res: Response) {
   });
 
   if (existingLike) {
-    await prisma.storyLike.delete({
+    await prisma.storyLike.deleteMany({
       where: {
-        storyId_userId: {
-          storyId,
-          userId: currentUserId,
-        },
+        storyId,
+        userId: currentUserId,
       },
     });
 
@@ -316,21 +314,27 @@ export async function toggleLikeStory(req: AuthRequest, res: Response) {
     return res.json({ success: true, isLiked: false, likesCount });
   }
 
-  await prisma.storyLike.create({
-    data: {
-      storyId,
-      userId: currentUserId,
-    },
-  });
+  let createdNewLike = false;
+  try {
+    await prisma.storyLike.create({
+      data: {
+        storyId,
+        userId: currentUserId,
+      },
+    });
+    createdNewLike = true;
+  } catch (err: any) {
+    if (err?.code !== 'P2002') throw err;
+  }
 
   const likesCount = await prisma.storyLike.count({ where: { storyId } });
 
-  if (story.userId !== currentUserId) {
+  if (createdNewLike && story.userId !== currentUserId) {
     const notification = await prisma.notification.create({
       data: {
         recipientId: story.userId,
         actorId: currentUserId,
-        type: 'LIKE_POST',
+        type: 'LIKE_STORY',
         entityId: storyId,
       },
       include: {

@@ -30,6 +30,7 @@ interface StoryViewerModalProps {
   onClose: () => void;
   storyGroups: StoryGroup[];
   initialGroupIndex?: number;
+  onStoryDeleted?: (storyId: string) => void;
 }
 
 const QUICK_REACTIONS = ['🔥', '❤️', '😂', '😮', '😢', '👏', '🎉', '💯'];
@@ -39,6 +40,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   onClose,
   storyGroups,
   initialGroupIndex = 0,
+  onStoryDeleted,
 }) => {
   const { user } = useAuth();
   const [currentGroupIdx, setCurrentGroupIdx] = useState(initialGroupIndex);
@@ -274,9 +276,24 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
     setIsDeleting(true);
     try {
-      const res = await api.delete(`/stories/${currentStory.id}`);
+      const deletedId = currentStory.id;
+      const groupLen = currentGroup.stories.length;
+      const res = await api.delete(`/stories/${deletedId}`);
       if (res.data.success) {
-        handleNextStory();
+        onStoryDeleted?.(deletedId);
+        setProgress(0);
+        if (groupLen <= 1) {
+          if (storyGroups.length <= 1) {
+            onClose();
+          } else if (currentGroupIdx >= storyGroups.length - 1) {
+            setCurrentGroupIdx(Math.max(0, storyGroups.length - 2));
+            setCurrentStoryIdx(0);
+          } else {
+            setCurrentStoryIdx(0);
+          }
+        } else if (currentStoryIdx >= groupLen - 1) {
+          setCurrentStoryIdx(groupLen - 2);
+        }
       }
     } catch (err) {
       console.error('Erro ao deletar story:', err);

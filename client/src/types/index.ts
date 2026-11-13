@@ -254,6 +254,7 @@ export interface Notification {
     | 'FOLLOW_REQUEST'
     | 'FOLLOW_ACCEPT'
     | 'LIKE_POST'
+    | 'LIKE_STORY'
     | 'COMMENT_POST'
     | 'REPLY_COMMENT'
     | 'NEW_POST'

@@ -117,6 +117,16 @@ export const StoriesBar: React.FC = () => {
           }}
           storyGroups={storyGroups}
           initialGroupIndex={activeStoryIdx}
+          onStoryDeleted={(deletedStoryId) => {
+            setStoryGroups((prev) =>
+              prev
+                .map((g) => ({
+                  ...g,
+                  stories: g.stories.filter((s) => s.id !== deletedStoryId),
+                }))
+                .filter((g) => g.stories.length > 0)
+            );
+          }}
         />
       )}
 

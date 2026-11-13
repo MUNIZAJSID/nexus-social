@@ -5,9 +5,6 @@ import {
   Lock,
   User,
   ShieldCheck,
-  Plane,
-  Gamepad2,
-  Car,
   Wifi,
   Radio,
   Zap,
@@ -152,41 +149,14 @@ export const LoginPage: React.FC = () => {
               <span className="text-[10px] text-slate-500 font-mono">1-Clique</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="p-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold transition-all flex items-center gap-2"
+                className="p-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span className="truncate">@admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('wanderlust.maya', '123456')}
-                className="p-2.5 rounded-2xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/20 text-xs font-bold transition-all flex items-center gap-2"
-              >
-                <Plane className="w-4 h-4 text-teal-400" />
-                <span className="truncate">@wanderlust.maya</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('valkyrie.gg', '123456')}
-                className="p-2.5 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 text-xs font-bold transition-all flex items-center gap-2"
-              >
-                <Gamepad2 className="w-4 h-4 text-purple-400" />
-                <span className="truncate">@valkyrie.gg</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('turbo.beast', '123456')}
-                className="p-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-xs font-bold transition-all flex items-center gap-2"
-              >
-                <Car className="w-4 h-4 text-rose-400" />
-                <span className="truncate">@turbo.beast</span>
+                <span className="truncate">@admin (Demo Admin)</span>
               </button>
             </div>
           </div>
@@ -262,17 +232,17 @@ export const LoginPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setCustomServerUrl('http://192.168.0.65:5000')}
+                    onClick={() => setCustomServerUrl('')}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-mono"
                   >
-                    Wi-Fi Local
+                    Padrão (Automático)
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCustomServerUrl('https://singh-metres-economy-substance.trycloudflare.com')}
+                    onClick={() => setCustomServerUrl(`${window.location.protocol}//${window.location.hostname}:5000`)}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-mono truncate"
                   >
-                    Cloudflare
+                    Host Local :5000
                   </button>
                 </div>
 

@@ -15,7 +15,7 @@ export const BottomNavMobile: React.FC<BottomNavMobileProps> = ({ onOpenCreateMo
   const { unreadNotificationsCount } = useSocket();
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '';
+    if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 

@@ -13,6 +13,11 @@ export async function createPost(req: AuthRequest, res: Response) {
   const musicArtist = (req.body.musicArtist || '').trim() || null;
   const musicCoverUrl = (req.body.musicCoverUrl || '').trim() || null;
   const musicAudioUrl = (req.body.musicAudioUrl || '').trim() || null;
+  const parsedMusicStartTime = Number(req.body.musicStartTime);
+  const musicStartTime =
+    req.body.musicStartTime !== undefined && req.body.musicStartTime !== '' && !Number.isNaN(parsedMusicStartTime)
+      ? parsedMusicStartTime
+      : 0;
 
   if (!files || files.length === 0) {
     return res.status(400).json({ success: false, message: 'É obrigatório enviar pelo menos uma foto ou vídeo.' });
@@ -27,6 +32,7 @@ export async function createPost(req: AuthRequest, res: Response) {
       musicArtist,
       musicCoverUrl,
       musicAudioUrl,
+      musicStartTime,
       media: {
         create: files.map((file, index) => {
           const isVideo = file.mimetype.startsWith('video/');
@@ -99,6 +105,7 @@ function formatPost(p: any) {
     musicArtist: p.musicArtist || null,
     musicCoverUrl: p.musicCoverUrl || null,
     musicAudioUrl: p.musicAudioUrl || null,
+    musicStartTime: p.musicStartTime ?? 0,
     viewsCount: p.viewsCount || 0,
     createdAt: p.createdAt,
     user: p.user,
@@ -129,7 +136,7 @@ export async function getFeed(req: AuthRequest, res: Response) {
     deletedAt: null,
   };
 
-  if (currentUserId && followingIds.length > 0) {
+  if (currentUserId) {
     whereCondition.OR = [
       { userId: { in: [...followingIds, currentUserId] } },
       { user: { isPrivate: false } },
@@ -315,6 +322,28 @@ export async function getPostById(req: AuthRequest, res: Response) {
     return res.status(404).json({ success: false, message: 'Publicação não encontrada.' });
   }
 
+  if (post.user.isPrivate && currentUserId !== post.user.id && req.user?.role !== 'ADMIN') {
+    let isFollowing = false;
+    if (currentUserId) {
+      const follow = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: post.user.id,
+          },
+        },
+      });
+      isFollowing = !!follow;
+    }
+
+    if (!isFollowing) {
+      return res.status(403).json({
+        success: false,
+        message: 'Esta publicação pertence a uma conta privada.',
+      });
+    }
+  }
+
   // Incrementa contagem de visualização
   await prisma.post.update({
     where: { id: postId },
@@ -363,6 +392,15 @@ export async function toggleSavePost(req: AuthRequest, res: Response) {
   const currentUserId = req.user!.id;
   const postId = String(req.params.postId || '');
 
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, deletedAt: true },
+  });
+
+  if (!post || post.deletedAt) {
+    return res.status(404).json({ success: false, message: 'Publicação não encontrada.' });
+  }
+
   const existingSave = await prisma.savedPost.findUnique({
     where: {
       userId_postId: {
@@ -373,24 +411,26 @@ export async function toggleSavePost(req: AuthRequest, res: Response) {
   });
 
   if (existingSave) {
-    await prisma.savedPost.delete({
+    await prisma.savedPost.deleteMany({
       where: {
-        userId_postId: {
-          userId: currentUserId,
-          postId,
-        },
+        userId: currentUserId,
+        postId,
       },
     });
 
     return res.json({ success: true, isSaved: false, message: 'Publicação removida dos itens salvos.' });
   }
 
-  await prisma.savedPost.create({
-    data: {
-      userId: currentUserId,
-      postId,
-    },
-  });
+  try {
+    await prisma.savedPost.create({
+      data: {
+        userId: currentUserId,
+        postId,
+      },
+    });
+  } catch (err: any) {
+    if (err?.code !== 'P2002') throw err;
+  }
 
   return res.json({ success: true, isSaved: true, message: 'Publicação salva!' });
 }
