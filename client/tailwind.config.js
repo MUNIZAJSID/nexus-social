@@ -37,6 +37,7 @@ export default {
         'heart-burst': 'heartBurst 0.8s ease-out forwards',
         'fade-in': 'fadeIn 0.2s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'scale-fade': 'scaleFade 0.2s ease-out',
         'pulse-subtle': 'pulseSubtle 2s infinite',
       },
       keyframes: {
@@ -52,6 +53,10 @@ export default {
         slideUp: {
           '0%': { transform: 'translateY(12px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        scaleFade: {
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
         },
         pulseSubtle: {
           '0%, 100%': { opacity: '1' },

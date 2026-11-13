@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Lock } from 'lucide-react';
 import { PostCard } from '../components/feed/PostCard';
 import { PostCardSkeleton } from '../components/ui/Skeleton';
 import { api } from '../api/client';
@@ -12,11 +12,13 @@ export const PostDetailPage: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [otherPosts, setOtherPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPrivateLocked, setIsPrivateLocked] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!postId) return;
     setIsLoading(true);
+    setIsPrivateLocked(false);
     setError('');
 
     api.get(`/posts/${postId}`)
@@ -39,7 +41,12 @@ export const PostDetailPage: React.FC = () => {
         }
       })
       .catch((err) => {
-        setError(err.response?.data?.message || 'Publicação não encontrada.');
+        if (err.response?.status === 403 && err.response?.data?.isPrivateLocked) {
+          setIsPrivateLocked(true);
+          setError(err.response?.data?.message || 'Esta publicação pertence a uma conta privada.');
+        } else {
+          setError(err.response?.data?.message || 'Publicação não encontrada.');
+        }
       })
       .finally(() => setIsLoading(false));
   }, [postId]);
@@ -56,6 +63,16 @@ export const PostDetailPage: React.FC = () => {
 
       {isLoading ? (
         <PostCardSkeleton />
+      ) : isPrivateLocked ? (
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-10 sm:p-12 text-center flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+            Conteúdo de conta privada
+          </h3>
+          <p className="text-xs text-slate-500 max-w-xs">{error}</p>
+        </div>
       ) : error || !post ? (
         <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center">
           <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">

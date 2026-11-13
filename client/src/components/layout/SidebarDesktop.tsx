@@ -28,7 +28,7 @@ export const SidebarDesktop: React.FC<SidebarDesktopProps> = ({ onOpenCreateModa
   const location = useLocation();
   const { user, isAdmin, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { unreadNotificationsCount } = useSocket();
+  const { unreadNotificationsCount, unreadMessagesCount } = useSocket();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -43,6 +43,7 @@ export const SidebarDesktop: React.FC<SidebarDesktopProps> = ({ onOpenCreateModa
       label: 'Mensagens',
       icon: MessageCircle,
       path: '/chat',
+      badge: unreadMessagesCount,
     },
     {
       label: 'Notificações',

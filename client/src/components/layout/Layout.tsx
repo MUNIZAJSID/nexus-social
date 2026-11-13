@@ -21,7 +21,7 @@ export const Layout: React.FC = () => {
       <TopHeaderMobile />
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 min-w-0 px-4 py-4 md:px-8 md:py-8 pb-20 md:pb-8 flex justify-center">
+      <main className="flex-1 min-w-0 px-3 sm:px-4 py-4 md:px-8 md:py-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Outlet />
         </div>

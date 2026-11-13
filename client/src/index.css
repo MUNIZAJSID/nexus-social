@@ -10,7 +10,21 @@
 
   body {
     @apply font-sans bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100;
+    overscroll-behavior-y: contain;
   }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
 /* Custom Scrollbars */

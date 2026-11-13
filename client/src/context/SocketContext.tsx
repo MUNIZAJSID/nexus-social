@@ -62,6 +62,9 @@ interface SocketContextType {
   unreadNotificationsCount: number;
   setUnreadNotificationsCount: React.Dispatch<React.SetStateAction<number>>;
   refreshUnreadCount: () => Promise<void>;
+  unreadMessagesCount: number;
+  setUnreadMessagesCount: React.Dispatch<React.SetStateAction<number>>;
+  refreshUnreadMessagesCount: () => Promise<void>;
   toasts: ToastNotification[];
   removeToast: (id: string) => void;
   joinConversation: (conversationId: string) => void;
@@ -77,6 +80,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [socket, setSocket] = useState<Socket | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -90,7 +94,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (res.data.success) {
         setUnreadNotificationsCount(res.data.unreadCount);
       }
-    } catch (e) {
+    } catch {
+      // Ignora erro
+    }
+  }, [isAuthenticated]);
+
+  const refreshUnreadMessagesCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await api.get('/chat/conversations');
+      if (res.data.success && Array.isArray(res.data.conversations)) {
+        const totalUnread = res.data.conversations.reduce(
+          (acc: number, c: { unreadCount?: number }) => acc + (c.unreadCount || 0),
+          0
+        );
+        setUnreadMessagesCount(totalUnread);
+      }
+    } catch {
       // Ignora erro
     }
   }, [isAuthenticated]);
@@ -182,6 +202,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       s.on('conversation_updated', ({ conversationId, lastMessage }: any) => {
         if (!lastMessage || lastMessage.senderId === user?.id) return;
 
+        setUnreadMessagesCount((prev) => prev + 1);
         playNotificationSound();
         const senderName = lastMessage.sender?.displayName || `@${lastMessage.sender?.username || 'Usuário'}`;
         const messagePreview = lastMessage.content || (lastMessage.mediaType === 'IMAGE' ? '📷 Foto' : lastMessage.mediaType === 'VIDEO' ? '🎥 Vídeo' : '🎵 Áudio');
@@ -194,7 +215,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           message: messagePreview,
           avatarUrl: lastMessage.sender?.avatarUrl,
           type: 'NEW_MESSAGE',
-          link: '/chat',
+          link: `/chat?conversationId=${conversationId}`,
         };
 
         setToasts((prev) => [newToast, ...prev.slice(0, 2)]);
@@ -205,6 +226,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
 
       refreshUnreadCount();
+      refreshUnreadMessagesCount();
 
       return () => {
         disconnectSocket();
@@ -214,8 +236,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       disconnectSocket();
       setSocket(null);
       setOnlineUsers([]);
+      setUnreadNotificationsCount(0);
+      setUnreadMessagesCount(0);
     }
-  }, [isAuthenticated, token, user?.id, refreshUnreadCount, removeToast]);
+  }, [isAuthenticated, token, user?.id, refreshUnreadCount, refreshUnreadMessagesCount, removeToast]);
 
   const isUserOnline = useCallback(
     (userId: string) => {
@@ -249,6 +273,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unreadNotificationsCount,
         setUnreadNotificationsCount,
         refreshUnreadCount,
+        unreadMessagesCount,
+        setUnreadMessagesCount,
+        refreshUnreadMessagesCount,
         toasts,
         removeToast,
         joinConversation,

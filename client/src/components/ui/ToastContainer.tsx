@@ -22,6 +22,7 @@ export const ToastContainer: React.FC = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'LIKE_POST':
+      case 'LIKE_STORY':
         return <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />;
       case 'COMMENT_POST':
       case 'REPLY_COMMENT':
@@ -46,7 +47,7 @@ export const ToastContainer: React.FC = () => {
     if (toast.link) {
       navigate(toast.link);
     } else if (toast.type === 'NEW_MESSAGE') {
-      navigate('/direct');
+      navigate('/chat');
     } else if (toast.type === 'NEW_STORY') {
       navigate('/');
     } else {
@@ -55,7 +56,7 @@ export const ToastContainer: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+    <div className="fixed top-16 md:top-4 right-3 left-3 sm:left-auto sm:right-4 z-50 flex flex-col gap-2.5 sm:max-w-sm sm:w-full pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}

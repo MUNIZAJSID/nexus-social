@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Heart,
   MessageCircle,
@@ -12,19 +12,25 @@ import {
   Play,
   ArrowLeft,
   Grid,
+  UserPlus,
+  Check,
 } from 'lucide-react';
 import { SearchBar } from '../components/search/SearchBar';
 import { PostCardSkeleton } from '../components/ui/Skeleton';
 import { VerifiedBadge } from '../components/ui/VerifiedBadge';
 import { Avatar } from '../components/ui/Avatar';
 import { PostCard } from '../components/feed/PostCard';
+import { useAuth } from '../context/AuthContext';
 import { api, getMediaUrl } from '../api/client';
 import { Post } from '../types';
 
 export const ExplorePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'videos' | 'photos' | 'creators'>('all');
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [followingCreators, setFollowingCreators] = useState<{ [id: string]: 'FOLLOWED' | 'REQUESTED' | false }>({});
   const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid');
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +53,26 @@ export const ExplorePage: React.FC = () => {
       .catch((e) => console.error('Erro no explore:', e))
       .finally(() => setIsLoading(false));
   }, []);
+
+  const handleToggleFollowCreator = async (targetUserId: string) => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const res = await api.post(`/follow/${targetUserId}`);
+      if (res.data.success) {
+        const action = res.data.action;
+        setFollowingCreators((prev) => ({
+          ...prev,
+          [targetUserId]: action === 'FOLLOWED' ? 'FOLLOWED' : action === 'REQUESTED' ? 'REQUESTED' : false,
+        }));
+      }
+    } catch (e) {
+      console.error('Erro ao seguir criador:', e);
+    }
+  };
 
   // Scroll automático até o post clicado quando abrir o modo feed
   useEffect(() => {
@@ -77,7 +103,7 @@ export const ExplorePage: React.FC = () => {
       {viewMode === 'feed' ? (
         <div className="max-w-xl mx-auto w-full flex flex-col gap-5">
           {/* Barra Superior de Navegação do Feed */}
-          <div className="sticky top-0 z-30 bg-slate-50/90 dark:bg-[#090d16]/90 backdrop-blur-md py-3 px-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+          <div className="sticky top-[57px] md:top-0 z-20 bg-slate-50/90 dark:bg-[#090d16]/90 backdrop-blur-md py-3 px-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
             <button
               onClick={() => setViewMode('grid')}
               className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm cursor-pointer"
@@ -205,12 +231,40 @@ export const ExplorePage: React.FC = () => {
                     )}
                   </div>
 
-                  <Link
-                    to={`/profile/${su.username}`}
-                    className="w-full mt-2 py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-brand-600 hover:text-white dark:hover:bg-brand-600 font-bold text-xs text-slate-800 dark:text-slate-200 transition-colors text-center"
-                  >
-                    Ver Perfil
-                  </Link>
+                  <div className="w-full mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFollowCreator(su.id)}
+                      className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        followingCreators[su.id] === 'FOLLOWED'
+                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                          : followingCreators[su.id] === 'REQUESTED'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                          : 'bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-sm'
+                      }`}
+                    >
+                      {followingCreators[su.id] === 'FOLLOWED' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Seguindo</span>
+                        </>
+                      ) : followingCreators[su.id] === 'REQUESTED' ? (
+                        <span>Solicitado</span>
+                      ) : (
+                        <>
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Seguir</span>
+                        </>
+                      )}
+                    </button>
+
+                    <Link
+                      to={`/profile/${su.username}`}
+                      className="py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs text-slate-800 dark:text-slate-200 transition-colors text-center"
+                    >
+                      Perfil
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

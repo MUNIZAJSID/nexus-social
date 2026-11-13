@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input, Textarea } from '../ui/Input';
@@ -24,12 +24,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { updateUserLocal } = useAuth();
   const [displayName, setDisplayName] = useState(user.displayName);
   const [bio, setBio] = useState(user.bio || '');
+  const [website, setWebsite] = useState(user.website || '');
   const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDisplayName(user.displayName);
+      setBio(user.bio || '');
+      setWebsite(user.website || '');
+      setIsPrivate(user.isPrivate);
+      setAvatarUrl(user.avatarUrl);
+      setError('');
+    }
+  }, [isOpen, user]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,6 +61,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       if (res.data.success) {
         setAvatarUrl(res.data.avatarUrl);
         updateUserLocal({ avatarUrl: res.data.avatarUrl });
+        if (res.data.user) {
+          onProfileUpdated?.({ ...user, ...res.data.user });
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao atualizar foto de perfil.');
@@ -63,15 +78,17 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setError('');
 
     try {
+      const normalizedWebsite = website.trim();
       const res = await api.patch('/users/profile', {
-        displayName,
+        displayName: displayName.trim(),
         bio,
+        website: normalizedWebsite || null,
         isPrivate,
       });
 
       if (res.data.success) {
         updateUserLocal(res.data.user);
-        onProfileUpdated?.(res.data.user);
+        onProfileUpdated?.({ ...user, ...res.data.user });
         onClose();
       }
     } catch (err: any) {
@@ -92,9 +109,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingAvatar}
-              className="absolute inset-0 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Alterar foto de perfil"
+              className="absolute inset-0 rounded-full bg-black/45 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Camera className="w-6 h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              aria-label="Selecionar nova foto"
+              className="absolute -bottom-1 -right-1 p-2 rounded-full bg-brand-600 hover:bg-brand-500 text-white shadow-lg border-2 border-white dark:border-[#0f172a] transition-transform active:scale-95"
+            >
+              <Camera className="w-3.5 h-3.5" />
             </button>
           </div>
           <button
@@ -130,6 +157,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           onChange={(e) => setBio(e.target.value)}
           maxLength={250}
           rows={3}
+        />
+
+        {/* Website */}
+        <Input
+          label="Site ou Link"
+          placeholder="https://seusite.com"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          maxLength={100}
         />
 
         {/* Privacy toggle */}

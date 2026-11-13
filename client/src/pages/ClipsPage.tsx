@@ -10,6 +10,8 @@ import {
   Check,
   MapPin,
   Flame,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { Avatar } from '../components/ui/Avatar';
 import { VerifiedBadge } from '../components/ui/VerifiedBadge';
@@ -24,14 +26,19 @@ export const ClipsPage: React.FC = () => {
   const [clips, setClips] = useState<Clip[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [showPlayStateOverlay, setShowPlayStateOverlay] = useState<string | null>(null);
+  const [heartBurstClipId, setHeartBurstClipId] = useState<string | null>(null);
   const [activeCommentClipId, setActiveCommentClipId] = useState<string | null>(null);
   const [shareClip, setShareClip] = useState<Clip | null>(null);
   const [followingStates, setFollowingStates] = useState<{ [key: string]: boolean }>({});
   const [likesStates, setLikesStates] = useState<{ [key: string]: { liked: boolean; count: number } }>({});
+  const [commentsCounts, setCommentsCounts] = useState<{ [key: string]: number }>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const tapTimerRef = useRef<number | null>(null);
 
   const fetchClips = async () => {
     setIsLoading(true);
@@ -39,11 +46,14 @@ export const ClipsPage: React.FC = () => {
       const res = await api.get('/clips?limit=20');
       if (res.data.success) {
         setClips(res.data.clips);
-        const lStates: any = {};
+        const lStates: { [key: string]: { liked: boolean; count: number } } = {};
+        const cCounts: { [key: string]: number } = {};
         res.data.clips.forEach((c: Clip) => {
           lStates[c.id] = { liked: !!c.isLiked, count: c.likesCount || 0 };
+          cCounts[c.id] = c.commentsCount || 0;
         });
         setLikesStates(lStates);
+        setCommentsCounts(cCounts);
       }
     } catch (e) {
       console.error(e);
@@ -56,16 +66,17 @@ export const ClipsPage: React.FC = () => {
     fetchClips();
   }, []);
 
-  // Intersection observer para tocar apenas o vídeo centralizado na tela
+  // Scroll snap detector com guarda contra divisão por zero
   useEffect(() => {
     const handleScroll = () => {
       if (!containerRef.current) return;
       const height = containerRef.current.clientHeight;
+      if (!height) return;
       const scrollTop = containerRef.current.scrollTop;
       const idx = Math.round(scrollTop / height);
       if (idx !== currentIdx && idx >= 0 && idx < clips.length) {
         setCurrentIdx(idx);
-        // Notifica visualização
+        setIsPaused(false);
         const clip = clips[idx];
         if (clip) {
           api.post(`/clips/${clip.id}/view`).catch(() => {});
@@ -80,20 +91,26 @@ export const ClipsPage: React.FC = () => {
     }
   }, [currentIdx, clips]);
 
+  // Toca o vídeo ativo quando visível e sem modal/gaveta bloqueando
   useEffect(() => {
-    // Toca o vídeo ativo e pausa os outros
+    const shouldPauseActive = isPaused || !!activeCommentClipId || !!shareClip;
+
     clips.forEach((clip, idx) => {
       const video = videoRefs.current[clip.id];
-      if (video) {
-        if (idx === currentIdx) {
-          video.play().catch(() => {});
-        } else {
+      if (!video) return;
+
+      if (idx === currentIdx) {
+        if (shouldPauseActive) {
           video.pause();
-          video.currentTime = 0;
+        } else {
+          video.play().catch(() => {});
         }
+      } else {
+        video.pause();
+        video.currentTime = 0;
       }
     });
-  }, [currentIdx, clips]);
+  }, [currentIdx, clips, isPaused, activeCommentClipId, shareClip]);
 
   const handleLike = async (clipId: string) => {
     if (!user) return;
@@ -133,8 +150,29 @@ export const ClipsPage: React.FC = () => {
     }
   };
 
+  const handleVideoTap = (clipId: string) => {
+    if (tapTimerRef.current) {
+      window.clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = null;
+      // Double tap -> curtir
+      setHeartBurstClipId(clipId);
+      setTimeout(() => setHeartBurstClipId(null), 850);
+      if (!likesStates[clipId]?.liked) {
+        handleLike(clipId);
+      }
+      return;
+    }
+
+    tapTimerRef.current = window.setTimeout(() => {
+      tapTimerRef.current = null;
+      setIsPaused((prev) => !prev);
+      setShowPlayStateOverlay(clipId);
+      setTimeout(() => setShowPlayStateOverlay(null), 650);
+    }, 220);
+  };
+
   return (
-    <div className="flex items-center justify-center h-[calc(100vh-5rem)] md:h-[calc(100vh-3rem)] w-full select-none">
+    <div className="flex items-center justify-center h-[calc(100dvh-8.5rem)] md:h-[calc(100dvh-4rem)] w-full select-none">
       {isLoading ? (
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
@@ -155,6 +193,7 @@ export const ClipsPage: React.FC = () => {
             const isFollowed = followingStates[clip.user.id];
             const isLiked = likesStates[clip.id]?.liked;
             const likeCount = likesStates[clip.id]?.count || 0;
+            const commentsCount = commentsCounts[clip.id] ?? clip.commentsCount ?? 0;
 
             return (
               <div
@@ -169,21 +208,47 @@ export const ClipsPage: React.FC = () => {
                   loop
                   muted={isMuted}
                   playsInline
-                  onClick={() => setIsMuted(!isMuted)}
+                  onClick={() => handleVideoTap(clip.id)}
                 />
+
+                {/* Overlay gradiente inferior para legibilidade */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                {/* Heart Burst no double tap */}
+                {heartBurstClipId === clip.id && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 animate-heart-burst">
+                    <Heart className="w-24 h-24 text-rose-500 fill-rose-500 drop-shadow-2xl" />
+                  </div>
+                )}
+
+                {/* Play/Pause visual indicator */}
+                {(showPlayStateOverlay === clip.id || (isPaused && clips[currentIdx]?.id === clip.id)) && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <div className="p-4 rounded-full bg-black/55 backdrop-blur-md text-white shadow-2xl animate-scale-fade">
+                      {isPaused ? (
+                        <Play className="w-9 h-9 fill-white ml-0.5" />
+                      ) : (
+                        <Pause className="w-9 h-9 fill-white" />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Botão de Som Mute/Unmute */}
                 <button
+                  type="button"
                   onClick={() => setIsMuted(!isMuted)}
+                  aria-label={isMuted ? 'Ativar som' : 'Silenciar'}
                   className="absolute top-4 right-4 z-20 p-2.5 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-sm transition-colors"
                 >
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 text-emerald-400" />}
                 </button>
 
                 {/* Ações Flutuantes à Direita */}
-                <div className="absolute right-4 bottom-20 z-20 flex flex-col items-center gap-5 text-white drop-shadow-md">
+                <div className="absolute right-3.5 bottom-20 z-20 flex flex-col items-center gap-4 text-white drop-shadow-md">
                   {/* Like */}
                   <button
+                    type="button"
                     onClick={() => handleLike(clip.id)}
                     className="flex flex-col items-center gap-1 group active:scale-125 transition-transform"
                   >
@@ -199,6 +264,7 @@ export const ClipsPage: React.FC = () => {
 
                   {/* Comentários */}
                   <button
+                    type="button"
                     onClick={() =>
                       setActiveCommentClipId(activeCommentClipId === clip.id ? null : clip.id)
                     }
@@ -207,7 +273,7 @@ export const ClipsPage: React.FC = () => {
                     <div className="p-3 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-md">
                       <MessageCircle className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-bold">{clip.commentsCount || 0}</span>
+                    <span className="text-xs font-bold">{commentsCount}</span>
                   </button>
 
                   {/* Compartilhar */}
@@ -286,7 +352,12 @@ export const ClipsPage: React.FC = () => {
                       </button>
                     </div>
                     <div className="flex-1 overflow-y-auto pt-2">
-                      <CommentSection postId={clip.id} />
+                      <CommentSection
+                        postId={clip.id}
+                        onCommentCountChange={(count) =>
+                          setCommentsCounts((prev) => ({ ...prev, [clip.id]: count }))
+                        }
+                      />
                     </div>
                   </div>
                 )}

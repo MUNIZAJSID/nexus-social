@@ -22,6 +22,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const fetchComments = async () => {
     setIsLoading(true);
@@ -46,6 +47,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     if (!newComment.trim()) return;
 
     setIsSubmitting(true);
+    setErrorMsg('');
     try {
       const res = await api.post(`/comments/post/${postId}`, {
         content: newComment,
@@ -58,22 +60,23 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         fetchComments();
         onCommentCountChange?.(res.data.commentsCount);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Erro ao enviar comentário.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    setErrorMsg('');
     try {
       const res = await api.delete(`/comments/${commentId}`);
       if (res.data.success) {
         fetchComments();
         onCommentCountChange?.(res.data.commentsCount);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Erro ao excluir comentário.');
     }
   };
 
@@ -180,6 +183,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Input bar */}
       {user ? (
         <form onSubmit={handleAddComment} className="flex flex-col gap-1.5">
+          {errorMsg && (
+            <p className="text-[11px] font-medium text-rose-500 px-1">{errorMsg}</p>
+          )}
           {replyingTo && (
             <div className="flex items-center justify-between px-3 py-1 bg-brand-500/10 rounded-lg text-xs text-brand-600 dark:text-brand-400">
               <span className="flex items-center gap-1.5 truncate">

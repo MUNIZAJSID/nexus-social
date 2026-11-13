@@ -33,6 +33,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -128,6 +130,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!inputText.trim() && !selectedFile) return;
 
     setIsSending(true);
+    setSendError('');
     emitTypingStop(conversation.id);
 
     try {
@@ -144,8 +147,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         handleRemoveFile();
         onNewMessageSent?.(res.data.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err);
+      setSendError(err.response?.data?.message || 'Não foi possível enviar a mensagem. Tente novamente.');
     } finally {
       setIsSending(false);
     }
@@ -153,6 +157,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendVoice = async (audioFile: File) => {
     setIsSending(true);
+    setSendError('');
     try {
       const formData = new FormData();
       formData.append('media', audioFile);
@@ -164,15 +169,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       if (res.data.success && res.data.message) {
         onNewMessageSent?.(res.data.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao enviar áudio:', err);
+      setSendError(err.response?.data?.message || 'Não foi possível enviar o áudio. Tente novamente.');
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#090d16] select-none">
+    <div className="flex flex-col h-full min-h-0 bg-slate-50 dark:bg-[#090d16] select-none">
       {/* Header */}
       <header className="px-4 py-3 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between z-10">
         <div className="flex items-center gap-3 min-w-0">
@@ -286,11 +292,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                       ) : msg.mediaType === 'VIDEO' ? (
                         <video src={getMediaUrl(msg.mediaUrl)} controls className="w-full rounded-xl" />
                       ) : (
-                        <img
-                          src={getMediaUrl(msg.mediaUrl)}
-                          alt="Anexo"
-                          className="w-full rounded-xl object-cover max-h-64"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setLightboxImageUrl(getMediaUrl(msg.mediaUrl!))}
+                          className="block w-full overflow-hidden rounded-xl focus:outline-none"
+                          title="Ampliar imagem"
+                        >
+                          <img
+                            src={getMediaUrl(msg.mediaUrl)}
+                            alt="Anexo"
+                            className="w-full rounded-xl object-cover max-h-64 hover:scale-[1.02] transition-transform cursor-zoom-in"
+                          />
+                        </button>
                       )}
                     </div>
                   )}
@@ -320,6 +333,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Input area */}
       <div className="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-800">
+        {sendError && (
+          <div className="mb-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center justify-between gap-2">
+            <span>{sendError}</span>
+            <button
+              type="button"
+              onClick={() => setSendError('')}
+              className="p-0.5 hover:text-rose-400"
+              aria-label="Fechar aviso"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Preview do anexo selecionado */}
         {previewUrl && (
           <div className="relative inline-block mb-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -374,6 +401,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </button>
         </form>
       </div>
+
+      {/* Lightbox para imagens ampliadas no chat */}
+      {lightboxImageUrl && (
+        <div
+          onClick={() => setLightboxImageUrl(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxImageUrl(null)}
+            aria-label="Fechar imagem"
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxImageUrl}
+            alt="Visualização ampliada"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-[88dvh] rounded-2xl object-contain shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -8,8 +8,8 @@ import {
   Clock,
   MessageCircle,
   Shield,
-  Globe,
   Link as LinkIcon,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -34,7 +34,7 @@ function formatCount(num: number): string {
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onProfileUpdated }) => {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, logout } = useAuth();
   const { isUserOnline } = useSocket();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [followersModalType, setFollowersModalType] = useState<'followers' | 'following' | null>(null);
@@ -125,10 +125,24 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onProfile
           {/* Botões de Ação */}
           <div className="flex items-center gap-2.5 flex-wrap justify-center sm:justify-end">
             {isSelf ? (
-              <Button variant="secondary" size="sm" onClick={() => setIsEditModalOpen(true)}>
-                <Edit3 className="w-4 h-4" />
-                <span>Editar Perfil</span>
-              </Button>
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setIsEditModalOpen(true)}>
+                  <Edit3 className="w-4 h-4" />
+                  <span>Editar Perfil</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                  className="md:hidden text-rose-500 border-rose-500/30 hover:bg-rose-500/10"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair</span>
+                </Button>
+              </>
             ) : (
               <>
                 <Button
@@ -194,13 +208,17 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onProfile
           {/* Website Link */}
           {profile.website && (
             <a
-              href={profile.website}
+              href={
+                /^https?:\/\//i.test(profile.website)
+                  ? profile.website
+                  : `https://${profile.website}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline w-fit"
             >
               <LinkIcon className="w-3.5 h-3.5" />
-              <span>{profile.website.replace(/^https?:\/\//, '')}</span>
+              <span>{profile.website.replace(/^https?:\/\//i, '')}</span>
             </a>
           )}
 

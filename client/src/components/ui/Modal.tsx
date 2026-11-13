@@ -55,10 +55,10 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Card do modal */}
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 animate-slide-up`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[90dvh] flex flex-col bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 animate-slide-up`}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex-shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
             {title ? (
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h3>
             ) : (
@@ -68,6 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Fechar modal"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -75,7 +76,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="p-6">{children}</div>
+        <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   );

@@ -21,6 +21,8 @@ import {
   Film,
   Music,
   Disc,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
@@ -47,6 +49,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
 
@@ -60,6 +64,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMenu) return;
+
+    const handleCloseMenu = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') setShowMenu(false);
+        return;
+      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleCloseMenu);
+    document.addEventListener('keydown', handleCloseMenu);
+    return () => {
+      document.removeEventListener('mousedown', handleCloseMenu);
+      document.removeEventListener('keydown', handleCloseMenu);
+    };
+  }, [showMenu]);
 
   const mediaList = post.media || [];
   const hasMultipleMedia = mediaList.length > 1;
@@ -415,20 +441,52 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
           </div>
         </div>
 
-        {/* Menu de Ações (Excluir/Denunciar) */}
-        <div className="relative">
+        {/* Menu de Ações (Copiar link / Excluir) */}
+        <div ref={menuRef} className="relative">
           <button
+            type="button"
             onClick={() => setShowMenu(!showMenu)}
+            aria-label="Opções da publicação"
             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <MoreHorizontal className="w-5 h-5" />
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-30 animate-scale-fade">
+            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-30 animate-scale-fade">
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/post/${post.id}`;
+                  navigator.clipboard?.writeText(shareUrl);
+                  setCopiedLink(true);
+                  setTimeout(() => {
+                    setCopiedLink(false);
+                    setShowMenu(false);
+                  }, 1000);
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-emerald-500">Link copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copiar link</span>
+                  </>
+                )}
+              </button>
+
               {canDelete && (
                 <button
-                  onClick={handleDeletePost}
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleDeletePost();
+                  }}
                   className="flex items-center gap-2 w-full px-4 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -684,7 +742,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
 
         {/* Legenda */}
         {post.caption && (
-          <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 mb-2 leading-relaxed">
+          <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 mb-2 leading-relaxed break-words">
             <Link
               to={`/profile/${post.user.username}`}
               className="font-bold text-slate-900 dark:text-slate-100 mr-1.5 hover:underline inline-flex items-center gap-1"
@@ -692,7 +750,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onPostDeleted }) => {
               <span>{post.user.displayName}</span>
               {post.user.isVerified && <VerifiedBadge size="xs" />}
             </Link>
-            <span>{post.caption}</span>
+            <span>
+              {post.caption.length > 180 && !isCaptionExpanded
+                ? `${post.caption.slice(0, 180)}... `
+                : post.caption}
+            </span>
+            {post.caption.length > 180 && (
+              <button
+                type="button"
+                onClick={() => setIsCaptionExpanded((prev) => !prev)}
+                className="ml-1 text-xs font-bold text-slate-500 hover:text-brand-500 transition-colors"
+              >
+                {isCaptionExpanded ? 'ver menos' : 'ver mais'}
+              </button>
+            )}
           </div>
         )}
 
